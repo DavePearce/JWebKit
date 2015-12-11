@@ -1,21 +1,22 @@
 package jweb;
 
 import java.io.*;
-import java.net.InetSocketAddress;
-import java.net.SocketTimeoutException;
+import java.net.*;
+import java.util.List;
 import java.util.Locale;
 
-import org.apache.http.ConnectionClosedException;
-import org.apache.http.ExceptionLogger;
-import org.apache.http.HttpException;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
+import org.apache.http.*;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.config.SocketConfig;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.bootstrap.HttpServer;
 import org.apache.http.impl.bootstrap.ServerBootstrap;
+import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
+import org.apache.http.util.EntityUtils;
+
+import jweb.util.HttpMethodDispatchHandler;
  
 /**
  * Responsible for initialising and starting the HTTP server which manages the
@@ -52,16 +53,38 @@ public class DefaultHttpServer {
 		}
 	}
 	
-	private static class DefaultHandler implements HttpRequestHandler {
-
-		@Override
-		public void handle(HttpRequest request, HttpResponse response, HttpContext context)
-				throws HttpException, IOException {
-			String method = request.getRequestLine().getMethod().toUpperCase(Locale.ROOT);
-			System.out.println("GOT: " + method);
-			response.setStatusCode(HttpStatus.SC_OK);
+	private static class DefaultHandler extends HttpMethodDispatchHandler {
+		
+		private static String data = "NOTHING";
+		
+		public DefaultHandler() {
+			super(HttpMethodDispatchHandler.ALLOW_GET | HttpMethodDispatchHandler.ALLOW_POST);
 		}
 		
+		@Override
+		public void get(HttpRequest request, HttpResponse response, HttpContext context)
+				throws HttpException, IOException {
+			String uri = request.getRequestLine().getUri();
+			try {
+				List<NameValuePair> parameters = new URIBuilder(uri).getQueryParams();
+				for(NameValuePair nvp : parameters) {
+					System.err.println(nvp.getName() + " = " + nvp.getValue());
+				}
+				response.setStatusCode(HttpStatus.SC_OK);
+				response.setEntity(new StringEntity("HELLO " + data));
+			} catch(URISyntaxException e) {
+				throw new HttpException("Invalid URI",e);
+			}
+		}
+		
+		public void post(HttpRequest request, HttpResponse response, HttpContext context)
+				throws HttpException, IOException {
+			if(request instanceof HttpEntityEnclosingRequest) {
+				HttpEntityEnclosingRequest r = (HttpEntityEnclosingRequest) request;
+				String entity = EntityUtils.toString(r.getEntity());
+				data = entity;
+			}
+		}
 	}
 	
     private static class Logger implements ExceptionLogger {
