@@ -1,4 +1,4 @@
-package wyweb.util;
+package jweb.util;
 
 import java.io.*;
 
