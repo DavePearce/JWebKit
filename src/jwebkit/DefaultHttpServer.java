@@ -16,7 +16,7 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
 import org.apache.http.util.EntityUtils;
 
-import jwebkit.util.HttpMethodDispatchHandler;
+import jwebkit.http.HttpMethodDispatchHandler;
  
 /**
  * Responsible for initialising and starting the HTTP server which manages the

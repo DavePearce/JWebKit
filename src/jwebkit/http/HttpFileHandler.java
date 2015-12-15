@@ -1,4 +1,4 @@
-package jwebkit.util;
+package jwebkit.http;
 
 import static java.net.HttpURLConnection.HTTP_BAD_METHOD;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;

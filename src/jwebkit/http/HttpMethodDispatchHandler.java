@@ -1,4 +1,4 @@
-package jwebkit.util;
+package jwebkit.http;
 
 import java.io.IOException;
 import java.util.Locale;
