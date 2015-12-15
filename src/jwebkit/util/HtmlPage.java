@@ -1,4 +1,4 @@
-package jweb.util;
+package jwebkit.util;
 
 import java.io.*;
 

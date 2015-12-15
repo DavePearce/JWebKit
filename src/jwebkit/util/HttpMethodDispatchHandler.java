@@ -1,4 +1,4 @@
-package jweb.util;
+package jwebkit.util;
 
 import java.io.IOException;
 import java.util.Locale;
@@ -11,6 +11,14 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
 
+/**
+ * Provides a base class for dispatching HTTP requests based on their method
+ * kind. This allows easy development of RESTful APIs, and fine-grained control
+ * over what request methods are supported by a resource.
+ * 
+ * @author David J. Pearce
+ *
+ */
 public abstract class HttpMethodDispatchHandler implements HttpRequestHandler {
 
 	public static final int ALLOW_GET = 1;

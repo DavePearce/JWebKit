@@ -1,4 +1,4 @@
-package jweb;
+package jwebkit;
 
 import java.io.*;
 import java.net.*;
@@ -16,13 +16,13 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpRequestHandler;
 import org.apache.http.util.EntityUtils;
 
-import jweb.util.HttpMethodDispatchHandler;
+import jwebkit.util.HttpMethodDispatchHandler;
  
 /**
  * Responsible for initialising and starting the HTTP server which manages the
  * tool
  * 
- * @author djp
+ * @author David J. Pearce
  *
  */
 public class DefaultHttpServer {
