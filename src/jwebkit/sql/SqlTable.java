@@ -1,7 +1,5 @@
 package jwebkit.sql;
 
-import java.util.Iterator;
-
 /**
  * Respresents an SQL table as accessed via JDBC. The purpose of this class
  * is to simplify the process of communicating with the table.
