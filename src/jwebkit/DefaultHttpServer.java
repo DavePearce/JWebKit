@@ -39,7 +39,7 @@ public class DefaultHttpServer {
 	public static void main(String[] argc) throws SQLException {
 		Connection connection = getDatabaseConnection();
 		SqlDatabase db = new SqlDatabase(connection);
-		db.bindTable("users", new SqlTable.Column("name", new SqlType.VARCHAR(10)));
+		db.bindTable("users", new SqlTable.Column("name", SqlType.VARCHAR(10)));
 		
 		SocketConfig socketConfig = SocketConfig.custom()
 				.setSoTimeout(15000)

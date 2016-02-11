@@ -19,14 +19,7 @@ public class SqlDatabase {
 		this.tables = new HashMap<String, SqlTable>();
 		this.connection = connection;
 	}
-
-	/**
-	 * Get the Table instance corresponding to a given table in the database.
-	 */
-	public SqlTable getTable(String tableName) {
-		return tables.get(tableName);
-	}
-
+	
 	/**
 	 * Bind a table schema to this database. The intention is that this table
 	 * already exists within the database and this makes it visible from this
@@ -39,6 +32,15 @@ public class SqlDatabase {
 	public SqlDatabase bindTable(String tableName, SqlTable.Column... schema) {
 		tables.put(tableName, new SqlTable(tableName, schema));
 		return this;
+	}
+
+	/**
+	 * Get the Table instance corresponding to a given table in the database.
+	 * This must have been previously created or bound to its corresponding
+	 * table in the underlying database.
+	 */
+	public SqlTable getTable(String tableName) {
+		return tables.get(tableName);
 	}
 
 	// ================================================================

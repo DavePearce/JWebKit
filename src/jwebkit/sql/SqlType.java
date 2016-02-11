@@ -2,16 +2,22 @@ package jwebkit.sql;
 
 public abstract class SqlType {
 	
-	public static final SqlType Int = new Int();
+	public static final SqlType INT = new INT();
 			
+	public static final SqlType.VARCHAR VARCHAR(int maxLength) {
+		return new VARCHAR(maxLength);
+	}
+	
 	/**
 	 * Represents the int datatype which corresponds to 32bit signed integers.
 	 * 
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Int extends SqlType {
-		
+	public static class INT extends SqlType {
+		private INT() {
+			
+		}
 	}
 	
 	/**
@@ -22,7 +28,7 @@ public abstract class SqlType {
 	 */
 	public static class VARCHAR extends SqlType {
 		private final int maxLength;
-		public VARCHAR(int maxLength) {
+		private VARCHAR(int maxLength) {
 			this.maxLength = maxLength;
 		}
 	}
