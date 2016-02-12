@@ -29,8 +29,8 @@ public class SqlDatabase {
 	 * @param schema
 	 * @return
 	 */
-	public SqlDatabase bindTable(String tableName, SqlTable.Column... schema) {
-		tables.put(tableName, new SqlTable(tableName, schema));
+	public <T extends SqlRow> SqlDatabase bindTable(String tableName, SqlSchema schema) {
+		tables.put(tableName, new SqlTable(this, tableName, schema));
 		return this;
 	}
 
@@ -48,13 +48,14 @@ public class SqlDatabase {
 	// ================================================================
 	
 	/**
-	 * Execute a given SQL query
+	 * Execute a given SQL query. This is given package level visibility so that
+	 * it may be called from other classes in this package.
 	 * 
 	 * @param sql
 	 * @return
 	 * @throws SQLException
 	 */
-	private ResultSet query(String sql) throws SQLException {
+	ResultSet query(String sql) throws SQLException {
 		Statement stmt = connection.createStatement();
 		return stmt.executeQuery(sql);
 	}

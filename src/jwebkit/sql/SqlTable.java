@@ -1,5 +1,13 @@
 package jwebkit.sql;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Arrays;
+
 /**
  * Respresents an SQL table as accessed via JDBC. The purpose of this class
  * is to simplify the process of communicating with the table.
@@ -7,97 +15,66 @@ package jwebkit.sql;
  * @author David J. Pearce
  *
  */
-public class SqlTable<T> {
+public class SqlTable<T extends SqlRow> implements Iterable<T> {
+	/**
+	 * Parent reference 
+	 */
+	private SqlDatabase database;
+	
 	/**
 	 * The table name
 	 */
 	private String name;
-
+	
 	/**
-	 * The schema for the table
+	 * The type of row object held within this table.
 	 */
-	private Column[] schema;
-
-	public SqlTable(String name, Column... schema) {
+	private SqlSchema schema;
+	
+	public SqlTable(SqlDatabase db, String name, SqlSchema schema) {
+		this.database = db;
 		this.name = name;
-		this.schema = schema;
-	}
-
-	/**
-	 * Get the column schema for a given numbered column.
-	 * 
-	 * @param index
-	 * @return
-	 */
-	public Column getColumn(int index) {
-		return schema[index];
-	}
-
-	/**
-	 * Get the column schema for a given named column.
-	 * 
-	 * @param name
-	 *            --- Name of column schema to locate
-	 * @return
-	 */
-	public Column getColumn(String name) {
-		for (int i = 0; i != schema.length; ++i) {
-			Column c = schema[i];
-			if (c.getName().equals(name)) {
-				return c;
-			}
-		}
-		throw new IllegalArgumentException("Invalid column - " + name);
-	}
-
-	public int nColumns() {
-		return schema.length;
+		this.schema = schema;		
 	}
 
 	public java.util.Iterator<T> iterator() {
-		return new Iterator<T>();
+		try {
+			ResultSet r = database.query("SELECT * FROM " + name + ";");
+			return new Iterator<T>(r, schema);
+		} catch (SQLException e) {
+			throw new RuntimeException("SQL Exception", e);
+		}
 	}
 	
-	/**
-	 * Represents a column in the table schema
-	 * 
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class Column {
-		private final String name;
-		private final SqlType type;
-
-		public Column(String name, SqlType type) {
-			this.name = name;
-			this.type = type;
-		}
-
-		public String getName() {
-			return name;
-		}
-
-		public SqlType getType() {
-			return type;
-		}
-	}
-
-	private static class Iterator<S> implements java.util.Iterator<S> {
-
-		public Iterator() {
-
+	private static class Iterator<S extends SqlRow> implements java.util.Iterator<S> {
+		private final ResultSet data;
+		private final SqlSchema<S> schema;
+		
+		public Iterator(ResultSet data, SqlSchema<S> schema) {
+			this.data = data;
+			this.schema = schema;
 		}
 
 		@Override
 		public boolean hasNext() {
-			// TODO Auto-generated method stub
-			return false;
+			try {
+				return data.next();
+			} catch (SQLException e) {
+				throw new RuntimeException(e.getMessage(),e);
+			}
 		}
 
 		@Override
 		public S next() {
-			// TODO Auto-generated method stub
-			return null;
+			try {
+				Object[] row = new Object[schema.size()];
+				for(int i=0;i!=row.length;++i) {
+					row[i] = data.getObject(i+1);
+				}
+				return schema.constructRow(row);
+			} catch (SQLException e) {
+				throw new RuntimeException(e.getMessage(),e);
+			} 
 		}
 
 		@Override
@@ -106,4 +83,6 @@ public class SqlTable<T> {
 
 		}
 	}
+	
+	
 }
