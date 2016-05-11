@@ -5,7 +5,7 @@ import java.io.*;
 /**
  * A simple abstraction of a web-page.
  * 
- * @author djp
+ * @author David J. Pearce
  *
  */
 public class HtmlPage {

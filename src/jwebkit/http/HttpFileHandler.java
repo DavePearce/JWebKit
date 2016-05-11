@@ -4,11 +4,24 @@ import static java.net.HttpURLConnection.HTTP_BAD_METHOD;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_OK;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.List;
+
+import org.apache.http.HttpException;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.ContentType;
+import org.apache.http.protocol.HttpContext;
 
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
@@ -20,11 +33,11 @@ import com.sun.net.httpserver.HttpHandler;
  * @author David J. Pearce
  *
  */
-public class HttpFileHandler implements HttpHandler {
+public class HttpFileHandler extends HttpMethodDispatchHandler {
 	/**
 	 * The mime type for files handled by this server.
 	 */
-	private final String mimeType;
+	private final ContentType mimeType;
 	
 	/**
 	 * The root directory for the file store this server serves from.
@@ -33,31 +46,26 @@ public class HttpFileHandler implements HttpHandler {
 	
 	private static int CHUNK_SIZE = 1024;
 	
-	public HttpFileHandler(File rootDir, String mimeType) {
+	public HttpFileHandler(File rootDir, ContentType mimeType) {
+		super(HttpMethodDispatchHandler.ALLOW_GET);
 		this.rootDir = rootDir;
 		this.mimeType = mimeType;
 	}
 	
 	@Override
-	public void handle(HttpExchange hx) throws IOException {
-		if (hx.getRequestMethod().equals("GET")) {
-			try {
-				URI request = hx.getRequestURI();
-				File file = new File(rootDir,request.getPath());
-				Headers headers = hx.getResponseHeaders();
-				headers.add("Content-Type", mimeType);
-				hx.sendResponseHeaders(HTTP_OK, file.length());
-				OutputStream os = hx.getResponseBody();
-				writeFile(os,file);					
-			} catch(Exception e) {
-				hx.sendResponseHeaders(HTTP_BAD_REQUEST,0);
-			}
-		} else {
-			System.out.println("BAD METHOD");
-			hx.sendResponseHeaders(HTTP_BAD_METHOD, 0);
+	public void get(HttpRequest request, HttpResponse response, HttpContext context) throws HttpException, IOException {
+		try {
+			String uri = request.getRequestLine().getUri();
+			String path = new URIBuilder(uri).getPath();
+			File file = new File(rootDir, path);
+			ByteArrayOutputStream os = new ByteArrayOutputStream();
+			writeFile(os, file);
+			response.setStatusCode(HttpStatus.SC_OK);
+			response.setEntity(new ByteArrayEntity(os.toByteArray(), mimeType));
+		} catch (Exception e) {
+			e.printStackTrace();
+			response.setStatusCode(HttpStatus.SC_BAD_REQUEST);
 		}
-		
-		hx.close();
 	}
 	
 	/**
