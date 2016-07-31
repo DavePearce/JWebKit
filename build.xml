@@ -1,0 +1,56 @@
+<project name="jwebkit" default="build">
+  <import file="config.xml"/>
+
+  <!-- ============================================== -->
+  <!-- Compile Java Files -->
+  <!-- ============================================== -->
+  
+  
+  <target name="compile">
+    <javac debug="true" destdir="bin" debuglevel="vars,lines,source" source="1.7" target="1.7" includeantruntime="true">
+      <src path="src"/>
+      <include name="*/**"/>
+      <exclude name="*/**/package-info.java"/>
+      <classpath>
+        <path refid="httpcomponents.classpath"/>
+      </classpath>      
+    </javac>
+  </target>
+
+  <!-- ============================================== -->
+  <!-- Build Jar File -->
+  <!-- ============================================== -->
+  
+  <target name="build" depends="compile">
+    <mkdir dir="tmp"/>
+    <manifest file="tmp/MANIFEST.MF">
+      <attribute name="Built-By" value="${user.name}"/>
+      <attribute name="Implementation-Version" value="${version}"/>
+      <attribute name="Implementation-Title" value="jwebkit-v${version}.jar"/>
+    </manifest>
+    <jar destfile="lib/jwebkit-v${version}.jar" manifest="tmp/MANIFEST.MF">
+      <fileset dir="bin">
+        <include name="**/*.class"/>
+      </fileset>
+    </jar>
+    <delete dir="tmp"/>
+    <echo message="============================================="/>
+    <echo message="BUILT: lib/${ant.project.name}-v${version}.jar"/>
+    <echo message="============================================="/>
+  </target>
+
+  <!-- ============================================== -->
+  <!-- Misc Commands -->
+  <!-- ============================================== -->
+
+  <target name="clean">
+    <delete includeEmptyDirs="true" failonerror="false">
+      <fileset file="*~"/>
+      <fileset dir="bin">
+	<include name="**/*.class"/>
+      </fileset>
+    </delete>
+  </target>
+
+  
+</project>
