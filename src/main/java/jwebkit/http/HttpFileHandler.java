@@ -23,13 +23,9 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.protocol.HttpContext;
 
-import com.sun.net.httpserver.Headers;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-
 /**
  * Responsible for serving static files from the file system.
- * 
+ *
  * @author David J. Pearce
  *
  */
@@ -38,20 +34,20 @@ public class HttpFileHandler extends HttpMethodDispatchHandler {
 	 * The mime type for files handled by this server.
 	 */
 	private final ContentType mimeType;
-	
+
 	/**
 	 * The root directory for the file store this server serves from.
 	 */
 	private final File rootDir;
-	
+
 	private static int CHUNK_SIZE = 1024;
-	
+
 	public HttpFileHandler(File rootDir, ContentType mimeType) {
 		super(HttpMethodDispatchHandler.ALLOW_GET);
 		this.rootDir = rootDir;
 		this.mimeType = mimeType;
 	}
-	
+
 	@Override
 	public void get(HttpRequest request, HttpResponse response, HttpContext context) throws HttpException, IOException {
 		try {
@@ -67,7 +63,7 @@ public class HttpFileHandler extends HttpMethodDispatchHandler {
 			response.setStatusCode(HttpStatus.SC_BAD_REQUEST);
 		}
 	}
-	
+
 	/**
 	 * Write a given file in chunks to the output stream.
 	 * @param out
