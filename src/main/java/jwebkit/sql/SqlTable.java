@@ -11,32 +11,54 @@ import java.util.Arrays;
 /**
  * Respresents an SQL table as accessed via JDBC. The purpose of this class
  * is to simplify the process of communicating with the table.
- * 
+ *
  * @author David J. Pearce
  *
  */
 public class SqlTable<T extends SqlRow> implements Iterable<T> {
 	/**
-	 * Parent reference 
+	 * Parent reference
 	 */
 	private SqlDatabase database;
-	
+
 	/**
 	 * The table name
 	 */
 	private String name;
-	
+
 	/**
 	 * The type of row object held within this table.
 	 */
 	private SqlSchema schema;
-	
+
 	public SqlTable(SqlDatabase db, String name, SqlSchema schema) {
 		this.database = db;
 		this.name = name;
-		this.schema = schema;		
+		this.schema = schema;
 	}
 
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * Add a new row to this table. If a row with matching primary key(s)
+	 * already exists, then an error is thrown.
+	 *
+	 * @param row
+	 */
+	public void insert(T row) {
+		try {
+			database.insertInto(this, row);
+		} catch(SQLException e) {
+			throw new RuntimeException("SQL Exception", e);
+		}
+	}
+
+	/**
+	 * Get an iterator over all rows of the table
+	 */
+	@Override
 	public java.util.Iterator<T> iterator() {
 		try {
 			ResultSet r = database.query("SELECT * FROM " + name + ";");
@@ -45,11 +67,11 @@ public class SqlTable<T extends SqlRow> implements Iterable<T> {
 			throw new RuntimeException("SQL Exception", e);
 		}
 	}
-	
+
 	private static class Iterator<S extends SqlRow> implements java.util.Iterator<S> {
 		private final ResultSet data;
 		private final SqlSchema<S> schema;
-		
+
 		public Iterator(ResultSet data, SqlSchema<S> schema) {
 			this.data = data;
 			this.schema = schema;
@@ -74,7 +96,7 @@ public class SqlTable<T extends SqlRow> implements Iterable<T> {
 				return schema.constructRow(row);
 			} catch (SQLException e) {
 				throw new RuntimeException(e.getMessage(),e);
-			} 
+			}
 		}
 
 		@Override
@@ -83,6 +105,4 @@ public class SqlTable<T extends SqlRow> implements Iterable<T> {
 
 		}
 	}
-	
-	
 }
