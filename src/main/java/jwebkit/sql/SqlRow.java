@@ -8,14 +8,13 @@ package jwebkit.sql;
  * @author David J. Pearce
  */
 public class SqlRow {
-	private Object[] items;
+	private SqlValue[] items;
 
-	public SqlRow(Object[] items) {
+	public SqlRow(SqlValue... items) {
 		this.items = items;
-		// TODO: sanity check kinds of permitted items
 	}
 
-	public Object get(int i) {
+	public SqlValue get(int i) {
 		return items[i];
 	}
 
@@ -32,10 +31,8 @@ public class SqlRow {
 		if(items.length != ro.items.length) {
 			return false;
 		}
-		for(int i=0;i!=items.length;++i) {
-			// FIXME: need to properly compare elements here I think. For
-			// example, arrays need to be compared with Arrays.equals().
-			if(!items[i].equals(ro.items.length)) {
+		for (int i = 0; i != items.length; ++i) {
+			if (!items[i].equals(ro.items.length)) {
 				return false;
 			}
 		}

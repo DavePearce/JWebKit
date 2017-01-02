@@ -61,17 +61,25 @@ public class SqlDatabase {
 	}
 
 	/**
-	 * Insert a given row into a given table
+	 * INSERT a given row INTO a given table. The row must be a valid instance
+	 * of the schema associated with the corresponding table, otherwise an error
+	 * will be thrown.
+	 *
 	 * @param table
 	 * @param row
 	 */
-	void insertInto(SqlTable table, SqlRow row) throws SQLException {
+	void insert(SqlTable<?> table, SqlRow row) throws SQLException {
+		// Sanity check the row is a valid instance.
+		if(!table.getSchema().isInstance(row)) {
+			throw new IllegalArgumentException("invalid row for table");
+		}
+		// Perform the insert query.
 		String sql = "INSERT INTO " + table.getName() + " VALUES(";
-		for(int i=0;i!=row.size();++i) {
-			if(i != 0) {
+		for (int i = 0; i != row.size(); ++i) {
+			if (i != 0) {
 				sql += ",";
 			}
-			sql += toString(row.get(i));
+			sql += row.get(i);
 		}
 		sql += ");";
 		Statement stmt = connection.createStatement();
@@ -79,20 +87,26 @@ public class SqlDatabase {
 		System.out.println("QUERY : " + sql);
 	}
 
-
-	/**
-	 * Convert an object from a ResultSet into a human-readable string.
-	 *
-	 * @param o
-	 * @return
-	 */
-	private static String toString(Object o) {
-		if (o instanceof Integer) {
-			return o.toString();
-		} else if (o instanceof String) {
-			return "\"" + o.toString() + "\"";
-		} else {
-			return o.toString();
+	void delete(SqlTable<?> table, SqlRow row) throws SQLException {
+		SqlSchema<?> schema = table.getSchema();
+		// Sanity check the row is a valid instance.
+		if(!schema.isInstance(row)) {
+			throw new IllegalArgumentException("invalid row for table");
 		}
+		String sql = "DELETE FROM " + table.getName() + " WHERE ";
+
+		// FIXME: only really need to look at key values
+		for (int i = 0; i != row.size(); ++i) {
+			if (i != 0) {
+				sql += " AND ";
+			}
+			String name = schema.getColumn(i).getName();
+			sql += name + "=" + row.get(i);
+		}
+		sql += ";";
+		Statement stmt = connection.createStatement();
+		stmt.execute(sql);
+		System.out.println("QUERY : " + sql);
 	}
+
 }

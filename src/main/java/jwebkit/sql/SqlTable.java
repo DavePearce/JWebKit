@@ -1,12 +1,7 @@
 package jwebkit.sql;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.Arrays;
 
 /**
  * Respresents an SQL table as accessed via JDBC. The purpose of this class
@@ -15,7 +10,7 @@ import java.util.Arrays;
  * @author David J. Pearce
  *
  */
-public class SqlTable<T extends SqlRow> implements Iterable<T> {
+public class SqlTable<T extends SqlRow> {
 	/**
 	 * Parent reference
 	 */
@@ -29,27 +24,50 @@ public class SqlTable<T extends SqlRow> implements Iterable<T> {
 	/**
 	 * The type of row object held within this table.
 	 */
-	private SqlSchema schema;
+	private SqlSchema<T> schema;
 
-	public SqlTable(SqlDatabase db, String name, SqlSchema schema) {
+	public SqlTable(SqlDatabase db, String name, SqlSchema<T> schema) {
 		this.database = db;
 		this.name = name;
 		this.schema = schema;
+	}
+
+	public SqlDatabase getDatabase() {
+		return database;
 	}
 
 	public String getName() {
 		return name;
 	}
 
+	public SqlSchema<T> getSchema() {
+		return schema;
+	}
+
 	/**
-	 * Add a new row to this table. If a row with matching primary key(s)
-	 * already exists, then an error is thrown.
+	 * Add a new row to this table. If the row is not of the appropriate
+	 * structure or if another row with matching primary key(s) already exists,
+	 * then an error is thrown.
 	 *
 	 * @param row
 	 */
 	public void insert(T row) {
 		try {
-			database.insertInto(this, row);
+			database.insert(this, row);
+		} catch(SQLException e) {
+			throw new RuntimeException("SQL Exception", e);
+		}
+	}
+
+	/**
+	 * Delete a given row from the database. If this row is not of the
+	 * appropriate structure, then an error is thrown.
+	 *
+	 * @param row
+	 */
+	public void delete(T row) {
+		try {
+			database.delete(this, row);
 		} catch(SQLException e) {
 			throw new RuntimeException("SQL Exception", e);
 		}
@@ -58,51 +76,7 @@ public class SqlTable<T extends SqlRow> implements Iterable<T> {
 	/**
 	 * Get an iterator over all rows of the table
 	 */
-	@Override
-	public java.util.Iterator<T> iterator() {
-		try {
-			ResultSet r = database.query("SELECT * FROM " + name + ";");
-			return new Iterator<T>(r, schema);
-		} catch (SQLException e) {
-			throw new RuntimeException("SQL Exception", e);
-		}
-	}
-
-	private static class Iterator<S extends SqlRow> implements java.util.Iterator<S> {
-		private final ResultSet data;
-		private final SqlSchema<S> schema;
-
-		public Iterator(ResultSet data, SqlSchema<S> schema) {
-			this.data = data;
-			this.schema = schema;
-		}
-
-		@Override
-		public boolean hasNext() {
-			try {
-				return data.next();
-			} catch (SQLException e) {
-				throw new RuntimeException(e.getMessage(),e);
-			}
-		}
-
-		@Override
-		public S next() {
-			try {
-				Object[] row = new Object[schema.size()];
-				for(int i=0;i!=row.length;++i) {
-					row[i] = data.getObject(i+1);
-				}
-				return schema.constructRow(row);
-			} catch (SQLException e) {
-				throw new RuntimeException(e.getMessage(),e);
-			}
-		}
-
-		@Override
-		public void remove() {
-			// TODO Auto-generated method stub
-
-		}
+	public SqlQuery<T> select() {
+		return new SqlQuery<T>(this);
 	}
 }
