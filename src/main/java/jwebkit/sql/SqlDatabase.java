@@ -21,6 +21,19 @@ public class SqlDatabase {
 	}
 
 	/**
+	 * Get the Table instance corresponding to a given table in the database.
+	 * This must have been previously created or bound to its corresponding
+	 * table in the underlying database.
+	 */
+	public SqlTable<?> getTable(String tableName) {
+		return tables.get(tableName);
+	}
+
+	// ================================================================
+	// Private Helpers
+	// ================================================================
+
+	/**
 	 * Bind a table schema to this database. The intention is that this table
 	 * already exists within the database and this makes it visible from this
 	 * object.
@@ -29,23 +42,9 @@ public class SqlDatabase {
 	 * @param schema
 	 * @return
 	 */
-	public <T extends SqlRow> SqlDatabase bindTable(String tableName, SqlSchema schema) {
-		tables.put(tableName, new SqlTable(this, tableName, schema));
-		return this;
+	public <T extends SqlRow> void bind(SqlTable<T> table) {
+		tables.put(table.getName(), table);
 	}
-
-	/**
-	 * Get the Table instance corresponding to a given table in the database.
-	 * This must have been previously created or bound to its corresponding
-	 * table in the underlying database.
-	 */
-	public SqlTable getTable(String tableName) {
-		return tables.get(tableName);
-	}
-
-	// ================================================================
-	// Private Helpers
-	// ================================================================
 
 	/**
 	 * Execute a given SQL query. This is given package level visibility so that
@@ -68,9 +67,9 @@ public class SqlDatabase {
 	 * @param table
 	 * @param row
 	 */
-	void insert(SqlTable<?> table, SqlRow row) throws SQLException {
+	<T extends SqlRow> void insert(SqlTable<T> table, T row) throws SQLException {
 		// Sanity check the row is a valid instance.
-		if(!table.getSchema().isInstance(row)) {
+		if(!table.isInstance(row)) {
 			throw new IllegalArgumentException("invalid row for table");
 		}
 		// Perform the insert query.
@@ -87,10 +86,9 @@ public class SqlDatabase {
 		System.out.println("QUERY : " + sql);
 	}
 
-	void delete(SqlTable<?> table, SqlRow row) throws SQLException {
-		SqlSchema<?> schema = table.getSchema();
+	<T extends SqlRow> void delete(SqlTable<T> table, T row) throws SQLException {
 		// Sanity check the row is a valid instance.
-		if(!schema.isInstance(row)) {
+		if(!table.isInstance(row)) {
 			throw new IllegalArgumentException("invalid row for table");
 		}
 		String sql = "DELETE FROM " + table.getName() + " WHERE ";
@@ -100,7 +98,7 @@ public class SqlDatabase {
 			if (i != 0) {
 				sql += " AND ";
 			}
-			String name = schema.getColumn(i).getName();
+			String name = table.getColumn(i).getName();
 			sql += name + "=" + row.get(i);
 		}
 		sql += ";";

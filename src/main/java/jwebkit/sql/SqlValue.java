@@ -5,6 +5,16 @@ import java.util.Arrays;
 public class SqlValue {
 
 	/**
+	 * Create a new Int value for use within a database or query
+	 *
+	 * @param value
+	 * @return
+	 */
+	public static Int Int(long value) {
+		return new Int(value);
+	}
+
+	/**
 	 * Provides a generic class for representing SQL integer data types.
 	 *
 	 * @author David J. Pearce
@@ -13,7 +23,7 @@ public class SqlValue {
 	public static class Int extends SqlValue {
 		private final long value;
 
-		public Int(long value) {
+		private Int(long value) {
 			this.value = value;
 		}
 

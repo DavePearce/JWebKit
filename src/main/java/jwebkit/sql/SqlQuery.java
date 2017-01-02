@@ -22,15 +22,42 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 	 *
 	 */
 	public enum Operator {
-		Equal,
-		NotEqual,
-		GreaterThan,
-		LessThan,
-		GreaterThanOrEqual,
-		LessThanOrEqual,
-		Between,
-		Like,
-		IN
+		Equal {
+			@Override
+			public String toString() { return "="; }
+		},
+		NotEqual {
+			@Override
+			public String toString() { return "<>"; }
+		},
+		GreaterThan {
+			@Override
+			public String toString() { return ">"; }
+		},
+		LessThan {
+			@Override
+			public String toString() { return "<"; }
+		},
+		GreaterThanOrEqual {
+			@Override
+			public String toString() { return ">="; }
+		},
+		LessThanOrEqual {
+			@Override
+			public String toString() { return "<="; }
+		},
+		Between {
+			@Override
+			public String toString() { return "BETWEEN"; }
+		},
+		Like {
+			@Override
+			public String toString() { return "LIKE"; }
+		},
+		IN {
+			@Override
+			public String toString() { return "IN"; }
+		}
 	}
 
 	/**
@@ -42,30 +69,263 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 		this.table = table;
 	}
 
+	protected String getQueryString() {
+		return "SELECT * FROM " + table.getName();
+	}
+
 	@Override
 	public Iterator<T> iterator() {
 		try {
-			ResultSet r = table.getDatabase().query("SELECT * FROM " + table.getName() + ";");
-			return new Iterator<T>(r, table.getSchema());
+			ResultSet r = table.getDatabase().query(getQueryString() + ";");
+			return new Iterator<T>(r, table);
 		} catch (SQLException e) {
 			throw new RuntimeException("SQL Exception", e);
 		}
 	}
 
-	public SqlQuery<T> where(SqlSchema.Column column, Operator operator, SqlValue value) {
-		return this;
+	/**
+	 * Refine a query using a "WHERE column=value" expression. The right-hand
+	 * side must be an appropriate value for the type of the given column, else
+	 * an IllegalArgumentException is thrown.
+	 *
+	 * @param columnName
+	 *            The name of the column being queried
+	 * @param value
+	 *            The value used to refine the query
+	 * @return
+	 */
+	public SqlQuery<T> whereEqual(String columnName, SqlValue value) {
+		return whereEqual(table.getColumn(columnName),value);
 	}
 
+	/**
+	 * Refine a query using a "WHERE column=value" expression. The right-hand
+	 * side must be an appropriate value for the type of the given column, else
+	 * an IllegalArgumentException is thrown.
+	 *
+	 * @param column
+	 *            The column being queried
+	 * @param value
+	 *            The value used to refine the query
+	 * @return
+	 */
+	public SqlQuery<T> whereEqual(SqlTable.Column column, SqlValue value) {
+		if(!column.getType().isInstance(value)) {
+			throw new IllegalArgumentException("Invalid value for WHERE clause");
+		}
+		return new Where<T>(table,this,column,Operator.Equal,value);
+	}
+
+	/**
+	 * Refine a query using a "WHERE column<>value" expression. The right-hand
+	 * side must be an appropriate value for the type of the given column, else
+	 * an IllegalArgumentException is thrown.
+	 *
+	 * @param columnName
+	 *            The name of the column being queried
+	 * @param value
+	 *            The value used to refine the query
+	 * @return
+	 */
+	public SqlQuery<T> whereNotEqual(String columnName, SqlValue value) {
+		return whereEqual(table.getColumn(columnName),value);
+	}
+
+	/**
+	 * Refine a query using a "WHERE column<>value" expression. The right-hand
+	 * side must be an appropriate value for the type of the given column, else
+	 * an IllegalArgumentException is thrown.
+	 *
+	 * @param column
+	 *            The column being queried
+	 * @param value
+	 *            The value used to refine the query
+	 * @return
+	 */
+	public SqlQuery<T> whereNotEqual(SqlTable.Column column, SqlValue value) {
+		if(!column.getType().isInstance(value)) {
+			throw new IllegalArgumentException("Invalid value for WHERE clause");
+		}
+		return new Where<T>(table,this,column,Operator.NotEqual,value);
+	}
+
+	/**
+	 * Refine a query using a "WHERE column>value" expression. The right-hand
+	 * side must be an appropriate value for the type of the given column, else
+	 * an IllegalArgumentException is thrown.
+	 *
+	 * @param column
+	 *            The name of the column being queried
+	 * @param value
+	 *            The value used to refine the query
+	 * @return
+	 */
+	public SqlQuery<T> whereGreater(String columnName, SqlValue value) {
+		return whereGreater(table.getColumn(columnName),value);
+	}
+
+	/**
+	 * Refine a query using a "WHERE column>value" expression. The right-hand
+	 * side must be an appropriate value for the type of the given column, else
+	 * an IllegalArgumentException is thrown.
+	 *
+	 * @param column
+	 *            The column being queried
+	 * @param value
+	 *            The value used to refine the query
+	 * @return
+	 */
+	public SqlQuery<T> whereGreater(SqlTable.Column column, SqlValue value) {
+		if(!column.getType().isInstance(value)) {
+			throw new IllegalArgumentException("Invalid value for WHERE clause");
+		} else if(!(value instanceof SqlValue.Int)) {
+			throw new IllegalArgumentException("Invalid value for WHERE comparison");
+		}
+		return new Where<T>(table,this,column,Operator.GreaterThan,value);
+	}
+
+	/**
+	 * Refine a query using a "WHERE column<value" expression. The right-hand
+	 * side must be an appropriate value for the type of the given column, else
+	 * an IllegalArgumentException is thrown.
+	 *
+	 * @param column
+	 *            The name of the column being queried
+	 * @param value
+	 *            The value used to refine the query
+	 * @return
+	 */
+	public SqlQuery<T> whereLess(String columnName, SqlValue value) {
+		return whereLess(table.getColumn(columnName),value);
+	}
+
+	/**
+	 * Refine a query using a "WHERE column<value" expression. The right-hand
+	 * side must be an appropriate value for the type of the given column, else
+	 * an IllegalArgumentException is thrown.
+	 *
+	 * @param column
+	 *            The column being queried
+	 * @param value
+	 *            The value used to refine the query
+	 * @return
+	 */
+	public SqlQuery<T> whereLess(SqlTable.Column column, SqlValue value) {
+		if(!column.getType().isInstance(value)) {
+			throw new IllegalArgumentException("Invalid value for WHERE clause");
+		} else if(!(value instanceof SqlValue.Int)) {
+			throw new IllegalArgumentException("Invalid value for WHERE comparison");
+		}
+		return new Where<T>(table,this,column,Operator.LessThan,value);
+	}
+
+	/**
+	 * Refine a query using a "WHERE column>=value" expression. The right-hand
+	 * side must be an appropriate value for the type of the given column, else
+	 * an IllegalArgumentException is thrown.
+	 *
+	 * @param column
+	 *            The name of the column being queried
+	 * @param value
+	 *            The value used to refine the query
+	 * @return
+	 */
+	public SqlQuery<T> whereGreaterOrEqual(String columnName, SqlValue value) {
+		return whereGreaterOrEqual(table.getColumn(columnName),value);
+	}
+
+	/**
+	 * Refine a query using a "WHERE column<=value" expression. The right-hand
+	 * side must be an appropriate value for the type of the given column, else
+	 * an IllegalArgumentException is thrown.
+	 *
+	 * @param column
+	 *            The column being queried
+	 * @param value
+	 *            The value used to refine the query
+	 * @return
+	 */
+	public SqlQuery<T> whereGreaterOrEqual(SqlTable.Column column, SqlValue value) {
+		if(!column.getType().isInstance(value)) {
+			throw new IllegalArgumentException("Invalid value for WHERE clause");
+		} else if(!(value instanceof SqlValue.Int)) {
+			throw new IllegalArgumentException("Invalid value for WHERE comparison");
+		}
+		return new Where<T>(table,this,column,Operator.GreaterThanOrEqual,value);
+	}
+
+	/**
+	 * Refine a query using a "WHERE column>=value" expression. The right-hand
+	 * side must be an appropriate value for the type of the given column, else
+	 * an IllegalArgumentException is thrown.
+	 *
+	 * @param column
+	 *            The name of the column being queried
+	 * @param value
+	 *            The value used to refine the query
+	 * @return
+	 */
+	public SqlQuery<T> whereLessOrEqual(String columnName, SqlValue value) {
+		return whereLessOrEqual(table.getColumn(columnName),value);
+	}
+
+	/**
+	 * Refine a query using a "WHERE column<=value" expression. The right-hand
+	 * side must be an appropriate value for the type of the given column, else
+	 * an IllegalArgumentException is thrown.
+	 *
+	 * @param column
+	 *            The column being queried
+	 * @param value
+	 *            The value used to refine the query
+	 * @return
+	 */
+	public SqlQuery<T> whereLessOrEqual(SqlTable.Column column, SqlValue value) {
+		if(!column.getType().isInstance(value)) {
+			throw new IllegalArgumentException("Invalid value for WHERE clause");
+		} else if(!(value instanceof SqlValue.Int)) {
+			throw new IllegalArgumentException("Invalid value for WHERE comparison");
+		}
+		return new Where<T>(table,this,column,Operator.LessThanOrEqual,value);
+	}
+
+	/**
+	 * Represents the results of a query which are refined by a given WHERE
+	 * clause.
+	 *
+	 * @author David J. Pearce
+	 *
+	 * @param <S>
+	 */
 	private static class Where<S extends SqlRow> extends SqlQuery<S> {
 		private final SqlQuery<S> source;
-		private final SqlSchema.Column column;
+		private final SqlTable.Column column;
 		private final Operator operator;
 		private final SqlValue value;
 
-		public Where(SqlTable<S> table) {
+		public Where(SqlTable<S> table, SqlQuery<S> source, SqlTable.Column column, Operator operator, SqlValue value) {
 			super(table);
-			// TODO Auto-generated constructor stub
+			this.source = source;
+			this.column = column;
+			this.operator = operator;
+			this.value = value;
 		}
+
+		@Override
+		protected String getQueryString() {
+			boolean needAND = source instanceof Where;
+			String qs = source.getQueryString();
+			if(needAND) {
+				qs += " AND ";
+			} else {
+				qs += " WHERE ";
+			}
+			qs += column.getName();
+			qs += operator.toString();
+			qs += value.toString();
+			return qs;
+		}
+
 	}
 
 	/**
@@ -78,9 +338,9 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 	 */
 	private static class Iterator<S extends SqlRow> implements java.util.Iterator<S> {
 		private final ResultSet data;
-		private final SqlSchema<S> schema;
+		private final SqlTable<S> schema;
 
-		public Iterator(ResultSet data, SqlSchema<S> schema) {
+		public Iterator(ResultSet data, SqlTable<S> schema) {
 			this.data = data;
 			this.schema = schema;
 		}
