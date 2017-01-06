@@ -112,6 +112,18 @@ public abstract class SqlTable<T extends SqlRow> {
 	public abstract T construct(Object...values);
 
 	/**
+	 * Create a table of the given name and schema in the database. This assumes
+	 * that the table does not already exist.
+	 */
+	public void create() {
+		try {
+			database.create(this);
+		} catch(SQLException e) {
+			throw new RuntimeException("SQL Exception", e);
+		}
+	}
+
+	/**
 	 * Add a new row to this table. If the row is not of the appropriate
 	 * structure or if another row with matching primary key(s) already exists,
 	 * then an error is thrown.

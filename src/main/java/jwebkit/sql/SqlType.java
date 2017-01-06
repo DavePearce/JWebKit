@@ -53,6 +53,11 @@ public abstract class SqlType {
 			}
 			return false;
 		}
+
+		@Override
+		public String toString() {
+			return "INT";
+		}
 	}
 
 	/**
@@ -79,6 +84,11 @@ public abstract class SqlType {
 				}
 			}
 			return true;
+		}
+
+		@Override
+		public String toString() {
+			return "VARCHAR(" + width + ")";
 		}
 	}
 

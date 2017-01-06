@@ -59,6 +59,21 @@ public class SqlDatabase {
 		return stmt.executeQuery(sql);
 	}
 
+	<T extends SqlRow> void create(SqlTable<T> table) throws SQLException {
+		String sql = "CREATE TABLE " + table.getName() + "(";
+		for(int i=0;i!=table.size();++i) {
+			if(i != 0) {
+				sql += ",";
+			}
+			SqlTable.Column col = table.getColumn(i);
+			sql += col.getName() + " " + col.getType();
+		}
+		sql += ");";
+		System.out.println("QUERY : " + sql);
+		Statement stmt = connection.createStatement();
+		stmt.execute(sql);
+	}
+
 	/**
 	 * INSERT a given row INTO a given table. The row must be a valid instance
 	 * of the schema associated with the corresponding table, otherwise an error
