@@ -75,6 +75,21 @@ public class SqlDatabase {
 	}
 
 	/**
+	 * Check whether a given table already exists in the database or not.
+	 *
+	 * @param table
+	 * @return
+	 * @throws SQLException
+	 */
+	<T extends SqlRow> boolean exists(SqlTable<T> table) throws SQLException {
+		DatabaseMetaData meta = connection.getMetaData();
+		ResultSet tables = meta.getTables(null, null, table.getName(), null);
+		boolean r = tables.next();
+		tables.close();
+		return r;
+	}
+
+	/**
 	 * INSERT a given row INTO a given table. The row must be a valid instance
 	 * of the schema associated with the corresponding table, otherwise an error
 	 * will be thrown.
@@ -101,6 +116,13 @@ public class SqlDatabase {
 		System.out.println("QUERY : " + sql);
 	}
 
+	/**
+	 * Delete a given row from the database
+	 *
+	 * @param table
+	 * @param row
+	 * @throws SQLException
+	 */
 	<T extends SqlRow> void delete(SqlTable<T> table, T row) throws SQLException {
 		// Sanity check the row is a valid instance.
 		if(!table.isInstance(row)) {

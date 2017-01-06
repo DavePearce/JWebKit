@@ -77,6 +77,14 @@ public abstract class SqlTable<T extends SqlRow> {
 		return schema.length;
 	}
 
+	public boolean exists() {
+		try {
+			return database.exists(this);
+		} catch(SQLException e) {
+			throw new RuntimeException("SQL Exception", e);
+		}
+	}
+
 	/**
 	 * Check whether a given row object is an instance of the schema for this
 	 * table. This checks that the required number of fields are present, and
