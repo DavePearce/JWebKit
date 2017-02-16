@@ -1,5 +1,6 @@
 package jwebkit.sql;
 
+import java.time.*;
 import java.util.Arrays;
 
 public class SqlValue {
@@ -102,6 +103,65 @@ public class SqlValue {
 		public String toString() {
 			// FIXME: this is broken
 			return "\"" + new String(value) + "\"";
+		}
+	}
+
+	public static class Date extends SqlValue {
+		private LocalDate date;
+
+		public Date(LocalDate date) {
+			this.date = date;
+		}
+
+		public LocalDate asLocalDate() {
+			return date;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			return o instanceof Date && date.equals(((Date)o).date);
+		}
+
+		@Override
+		public String toString() {
+			return "'" + date.toString() + "'";
+		}
+	}
+
+	public static class DateTime extends SqlValue {
+		private LocalDateTime datetime;
+
+		public DateTime(LocalDateTime date) {
+			this.datetime = date;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			return o instanceof DateTime && datetime.equals(((DateTime)o).datetime);
+		}
+
+		@Override
+		public String toString() {
+			return "'" + datetime.toString() + "'";
+		}
+	}
+
+	public static class TimeStamp extends SqlValue {
+		private LocalTime time;
+
+		public TimeStamp(LocalTime time) {
+			this.time = time;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			return o instanceof TimeStamp && time.equals(((TimeStamp)o).time);
+		}
+
+
+		@Override
+		public String toString() {
+			return "'" + time.toString() + "'";
 		}
 	}
 }

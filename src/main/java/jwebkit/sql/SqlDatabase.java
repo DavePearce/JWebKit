@@ -16,7 +16,7 @@ public class SqlDatabase {
 	private Map<String, SqlTable> tables;
 
 	public SqlDatabase(Connection connection) {
-		this.tables = new HashMap<String, SqlTable>();
+		this.tables = new HashMap<>();
 		this.connection = connection;
 	}
 
@@ -111,9 +111,9 @@ public class SqlDatabase {
 			sql += row.get(i);
 		}
 		sql += ");";
+		System.out.println("QUERY : " + sql);
 		Statement stmt = connection.createStatement();
 		stmt.execute(sql);
-		System.out.println("QUERY : " + sql);
 	}
 
 	/**
