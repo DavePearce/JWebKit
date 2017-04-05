@@ -1,5 +1,7 @@
 package jwebkit.sql;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 
 /**
@@ -9,7 +11,7 @@ import java.sql.SQLException;
  * @author David J. Pearce
  *
  */
-public abstract class SqlTable<T extends SqlRow> {
+public class SqlTable<T extends SqlRow> {
 	/**
 	 * Parent reference
 	 */
@@ -21,13 +23,19 @@ public abstract class SqlTable<T extends SqlRow> {
 	private final String name;
 
 	/**
+	 * The kind of row which will be instantiated by this table
+	 */
+	private final Class<T> rowClass;
+
+	/**
 	 * The schema for this table
 	 */
 	private final Column[] schema;
 
-	public SqlTable(SqlDatabase db, String name, Column... schema) {
+	public SqlTable(SqlDatabase db, String name, Class<T> rowClass, Column... schema) {
 		this.database = db;
 		this.name = name;
+		this.rowClass = rowClass;
 		this.schema = schema;
 		// Bind this table to the given database
 		db.bind(this);
@@ -97,15 +105,7 @@ public abstract class SqlTable<T extends SqlRow> {
 		if (row.size() != schema.length) {
 			return false;
 		} else {
-			// Check that each value is an instance of its corresponding column
-			// type.
-			for (int i = 0; i != schema.length; ++i) {
-				SqlValue value = row.get(i);
-				SqlType type = schema[i].type;
-				if (!type.isInstance(value)) {
-					return false;
-				}
-			}
+
 			//
 			return true;
 		}
@@ -117,7 +117,34 @@ public abstract class SqlTable<T extends SqlRow> {
 	 * @param values
 	 * @return
 	 */
-	public abstract T construct(Object...values);
+	public T newRowInstance(SqlValue[] row) {
+		// Check that each value is an instance of its corresponding column
+		// type.
+		for (int i = 0; i != schema.length; ++i) {
+			SqlValue value = row[i];
+			SqlType type = schema[i].type;
+			if (!type.isInstance(value)) {
+				throw new IllegalArgumentException("invalid row");
+			}
+		}
+		// Construct a new row instance
+		try {
+			Constructor<T> constructor = rowClass.getConstructor(SqlValue[].class);
+			return constructor.newInstance(new Object[] { row });
+		} catch (NoSuchMethodException e) {
+			throw new IllegalArgumentException(e);
+		} catch (SecurityException e) {
+			throw new IllegalArgumentException(e);
+		} catch (InstantiationException e) {
+			throw new IllegalArgumentException(e);
+		} catch (IllegalAccessException e) {
+			throw new IllegalArgumentException(e);
+		} catch (IllegalArgumentException e) {
+			throw new IllegalArgumentException(e);
+		} catch (InvocationTargetException e) {
+			throw new IllegalArgumentException(e);
+		}
+	}
 
 	/**
 	 * Create a table of the given name and schema in the database. This assumes
@@ -164,7 +191,7 @@ public abstract class SqlTable<T extends SqlRow> {
 	 * Get an iterator over all rows of the table
 	 */
 	public SqlQuery<T> select() {
-		return new SqlQuery<T>(this);
+		return new SqlQuery<>(this);
 	}
 
 	/**

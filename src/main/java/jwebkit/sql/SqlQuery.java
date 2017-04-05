@@ -1,5 +1,7 @@
 package jwebkit.sql;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -77,7 +79,7 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 	public Iterator<T> iterator() {
 		try {
 			ResultSet r = table.getDatabase().query(getQueryString() + ";");
-			return new Iterator<T>(r, table);
+			return new Iterator<>(r, table);
 		} catch (SQLException e) {
 			throw new RuntimeException("SQL Exception", e);
 		}
@@ -113,7 +115,7 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 		if(!column.getType().isInstance(value)) {
 			throw new IllegalArgumentException("Invalid value for WHERE clause");
 		}
-		return new Where<T>(table,this,column,Operator.Equal,value);
+		return new Where<>(table,this,column,Operator.Equal,value);
 	}
 
 	/**
@@ -146,7 +148,7 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 		if(!column.getType().isInstance(value)) {
 			throw new IllegalArgumentException("Invalid value for WHERE clause");
 		}
-		return new Where<T>(table,this,column,Operator.NotEqual,value);
+		return new Where<>(table,this,column,Operator.NotEqual,value);
 	}
 
 	/**
@@ -181,7 +183,7 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 		} else if(!(value instanceof SqlValue.Int)) {
 			throw new IllegalArgumentException("Invalid value for WHERE comparison");
 		}
-		return new Where<T>(table,this,column,Operator.GreaterThan,value);
+		return new Where<>(table,this,column,Operator.GreaterThan,value);
 	}
 
 	/**
@@ -216,7 +218,7 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 		} else if(!(value instanceof SqlValue.Int)) {
 			throw new IllegalArgumentException("Invalid value for WHERE comparison");
 		}
-		return new Where<T>(table,this,column,Operator.LessThan,value);
+		return new Where<>(table,this,column,Operator.LessThan,value);
 	}
 
 	/**
@@ -251,7 +253,7 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 		} else if(!(value instanceof SqlValue.Int)) {
 			throw new IllegalArgumentException("Invalid value for WHERE comparison");
 		}
-		return new Where<T>(table,this,column,Operator.GreaterThanOrEqual,value);
+		return new Where<>(table,this,column,Operator.GreaterThanOrEqual,value);
 	}
 
 	/**
@@ -286,7 +288,7 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 		} else if(!(value instanceof SqlValue.Int)) {
 			throw new IllegalArgumentException("Invalid value for WHERE comparison");
 		}
-		return new Where<T>(table,this,column,Operator.LessThanOrEqual,value);
+		return new Where<>(table,this,column,Operator.LessThanOrEqual,value);
 	}
 
 	/**
@@ -338,11 +340,11 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 	 */
 	private static class Iterator<S extends SqlRow> implements java.util.Iterator<S> {
 		private final ResultSet data;
-		private final SqlTable<S> schema;
+		private final SqlTable<S> table;
 
-		public Iterator(ResultSet data, SqlTable<S> schema) {
+		public Iterator(ResultSet data, SqlTable<S> table) {
 			this.data = data;
-			this.schema = schema;
+			this.table = table;
 		}
 
 		@Override
@@ -357,13 +359,14 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 		@Override
 		public S next() {
 			try {
-				Object[] row = new Object[schema.size()];
-				for(int i=0;i!=row.length;++i) {
-					row[i] = data.getObject(i+1);
+				SqlValue[] row = new SqlValue[table.size()];
+				for (int i = 0; i != row.length; ++i) {
+					SqlTable.Column column = table.getColumn(i);
+					row[i] = column.getType().fromObject(data.getObject(i + 1));
 				}
-				return schema.construct(row);
+				return table.newRowInstance(row);
 			} catch (SQLException e) {
-				throw new RuntimeException(e.getMessage(),e);
+				throw new RuntimeException(e.getMessage(), e);
 			}
 		}
 

@@ -1,5 +1,10 @@
 package jwebkit.sql;
 
+import java.math.BigInteger;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 public abstract class SqlType {
 
 	/**
@@ -91,6 +96,12 @@ public abstract class SqlType {
 		}
 
 		@Override
+		public SqlValue.Int fromObject(Object o) {
+			BigInteger v = (BigInteger) o;
+			return SqlValue.Int(v.longValue());
+		}
+
+		@Override
 		public String toString() {
 			return "INT";
 		}
@@ -120,6 +131,11 @@ public abstract class SqlType {
 				}
 			}
 			return true;
+		}
+
+		@Override
+		public SqlValue.Text fromObject(Object o) {
+			return new SqlValue.Text((String)o);
 		}
 
 		@Override
@@ -157,6 +173,11 @@ public abstract class SqlType {
 		public String toString() {
 			return "VARCHAR(" + width + ")";
 		}
+
+		@Override
+		public SqlValue.Text fromObject(Object o) {
+			return new SqlValue.Text((String)o);
+		}
 	}
 
 	public static final SqlType.DATE DATE = new DATE();
@@ -174,9 +195,17 @@ public abstract class SqlType {
 		public String toString() {
 			return "DATE";
 		}
+
+		@Override
+		public SqlValue.Date fromObject(Object o) {
+			return new SqlValue.Date((LocalDate) o);
+		}
 	}
+	public static final SqlType.DATETIME DATETIME = new DATETIME();
 
 	public static class DATETIME extends SqlType {
+
+		private DATETIME() {}
 
 		@Override
 		public boolean isInstance(SqlValue value) {
@@ -187,9 +216,17 @@ public abstract class SqlType {
 		public String toString() {
 			return "DATETIME";
 		}
+
+		@Override
+		public SqlValue.DateTime fromObject(Object o) {
+			Timestamp timestamp = (Timestamp) o;
+			return new SqlValue.DateTime(timestamp.toLocalDateTime());
+		}
 	}
 
 	public static class TIMESTAMP extends SqlType {
+
+		private TIMESTAMP() {}
 
 		@Override
 		public boolean isInstance(SqlValue value) {
@@ -200,7 +237,21 @@ public abstract class SqlType {
 		public String toString() {
 			return "TIMESTAMP";
 		}
+
+
+		@Override
+		public SqlValue.DateTime fromObject(Object o) {
+			throw new RuntimeException("implement me");
+		}
 	}
+
+	/**
+	 * Construct a value of the appropriate type from an object.
+	 *
+	 * @param object
+	 * @return
+	 */
+	public abstract SqlValue fromObject(Object object);
 
 	/**
 	 * Check whether a given value is an instance of this type or not.
