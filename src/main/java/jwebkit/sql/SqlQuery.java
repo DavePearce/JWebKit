@@ -6,16 +6,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
- * Represents the results of a given SELECT query. The results of this query
- * are obtained by iterating over its contents. Alternatively the query can
- * be further refined using WHERE clauses.
+ * Represents a given SELECT oR DELETE query. The results of this query are
+ * obtained by iterating over its contents. Alternatively the query can be
+ * further refined using WHERE clauses.
  *
  * @author David J. Pearce
  *
  * @param <S>
  */
 
-public class SqlQuery<T extends SqlRow> implements Iterable<T> {
+public abstract class SqlQuery<T extends SqlRow> implements Iterable<T> {
 	/**
 	 * The set of possible operations that can be used to refine a query via a
 	 * WHERE clause.
@@ -62,24 +62,29 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 		}
 	}
 
-	/**
-	 * The table that this query is operating over.
-	 */
-	private final SqlTable<T> table;
+	protected abstract SqlTable<T> getTable();
 
-	public SqlQuery(SqlTable<T> table) {
-		this.table = table;
-	}
-
-	protected String getQueryString() {
-		return "SELECT * FROM " + table.getName();
-	}
+	protected abstract String getQueryString();
 
 	@Override
 	public Iterator<T> iterator() {
 		try {
+			SqlTable<T> table = getTable();
 			ResultSet r = table.getDatabase().query(getQueryString() + ";");
 			return new Iterator<>(r, table);
+		} catch (SQLException e) {
+			throw new RuntimeException("SQL Exception", e);
+		}
+	}
+
+	/**
+	 * Apply the given query. This is normally used for queries where results
+	 * are not expected.
+	 */
+	public int apply() {
+		try {
+			SqlTable<T> table = getTable();
+			return table.getDatabase().update(getQueryString() + ";");
 		} catch (SQLException e) {
 			throw new RuntimeException("SQL Exception", e);
 		}
@@ -97,7 +102,7 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 	 * @return
 	 */
 	public SqlQuery<T> whereEqual(String columnName, SqlValue value) {
-		return whereEqual(table.getColumn(columnName),value);
+		return whereEqual(getTable().getColumn(columnName),value);
 	}
 
 	/**
@@ -115,7 +120,7 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 		if(!column.getType().isInstance(value)) {
 			throw new IllegalArgumentException("Invalid value for WHERE clause");
 		}
-		return new Where<>(table,this,column,Operator.Equal,value);
+		return new Where<>(this,column,Operator.Equal,value);
 	}
 
 	/**
@@ -130,7 +135,7 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 	 * @return
 	 */
 	public SqlQuery<T> whereNotEqual(String columnName, SqlValue value) {
-		return whereEqual(table.getColumn(columnName),value);
+		return whereEqual(getTable().getColumn(columnName),value);
 	}
 
 	/**
@@ -148,7 +153,7 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 		if(!column.getType().isInstance(value)) {
 			throw new IllegalArgumentException("Invalid value for WHERE clause");
 		}
-		return new Where<>(table,this,column,Operator.NotEqual,value);
+		return new Where<>(this,column,Operator.NotEqual,value);
 	}
 
 	/**
@@ -163,7 +168,7 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 	 * @return
 	 */
 	public SqlQuery<T> whereGreater(String columnName, SqlValue value) {
-		return whereGreater(table.getColumn(columnName),value);
+		return whereGreater(getTable().getColumn(columnName),value);
 	}
 
 	/**
@@ -183,7 +188,7 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 		} else if(!(value instanceof SqlValue.Int)) {
 			throw new IllegalArgumentException("Invalid value for WHERE comparison");
 		}
-		return new Where<>(table,this,column,Operator.GreaterThan,value);
+		return new Where<>(this,column,Operator.GreaterThan,value);
 	}
 
 	/**
@@ -198,7 +203,7 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 	 * @return
 	 */
 	public SqlQuery<T> whereLess(String columnName, SqlValue value) {
-		return whereLess(table.getColumn(columnName),value);
+		return whereLess(getTable().getColumn(columnName),value);
 	}
 
 	/**
@@ -218,7 +223,7 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 		} else if(!(value instanceof SqlValue.Int)) {
 			throw new IllegalArgumentException("Invalid value for WHERE comparison");
 		}
-		return new Where<>(table,this,column,Operator.LessThan,value);
+		return new Where<>(this,column,Operator.LessThan,value);
 	}
 
 	/**
@@ -233,7 +238,7 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 	 * @return
 	 */
 	public SqlQuery<T> whereGreaterOrEqual(String columnName, SqlValue value) {
-		return whereGreaterOrEqual(table.getColumn(columnName),value);
+		return whereGreaterOrEqual(getTable().getColumn(columnName),value);
 	}
 
 	/**
@@ -253,7 +258,7 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 		} else if(!(value instanceof SqlValue.Int)) {
 			throw new IllegalArgumentException("Invalid value for WHERE comparison");
 		}
-		return new Where<>(table,this,column,Operator.GreaterThanOrEqual,value);
+		return new Where<>(this,column,Operator.GreaterThanOrEqual,value);
 	}
 
 	/**
@@ -268,7 +273,7 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 	 * @return
 	 */
 	public SqlQuery<T> whereLessOrEqual(String columnName, SqlValue value) {
-		return whereLessOrEqual(table.getColumn(columnName),value);
+		return whereLessOrEqual(getTable().getColumn(columnName),value);
 	}
 
 	/**
@@ -288,7 +293,66 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 		} else if(!(value instanceof SqlValue.Int)) {
 			throw new IllegalArgumentException("Invalid value for WHERE comparison");
 		}
-		return new Where<>(table,this,column,Operator.LessThanOrEqual,value);
+		return new Where<>(this,column,Operator.LessThanOrEqual,value);
+	}
+
+	/**
+	 * Represents a SELECT query.
+	 *
+	 * @author David J. Pearce
+	 *
+	 * @param <S>
+	 */
+	public static class Select<S extends SqlRow> extends SqlQuery<S> {
+
+		/**
+		 * The table that this query is operating over.
+		 */
+		private final SqlTable<S> table;
+
+		public Select(SqlTable<S> table) {
+			this.table = table;
+		}
+
+		@Override
+		protected String getQueryString() {
+			return "SELECT * FROM " + table.getName();
+		}
+
+		@Override
+		protected SqlTable<S> getTable() {
+			return table;
+		}
+	}
+
+
+	/**
+	 * Represents the results of a given DELETE query.
+	 *
+	 * @author David J. Pearce
+	 *
+	 * @param <S>
+	 */
+	public static class Delete<S extends SqlRow> extends SqlQuery<S> {
+
+		/**
+		 * The table that this query is operating over.
+		 */
+		private final SqlTable<S> table;
+
+		public Delete(SqlTable<S> table) {
+			this.table = table;
+		}
+
+		@Override
+		protected String getQueryString() {
+			return "DELETE FROM " + table.getName();
+		}
+
+		@Override
+		protected SqlTable<S> getTable() {
+			return table;
+		}
 	}
 
 	/**
@@ -305,8 +369,7 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 		private final Operator operator;
 		private final SqlValue value;
 
-		public Where(SqlTable<S> table, SqlQuery<S> source, SqlTable.Column column, Operator operator, SqlValue value) {
-			super(table);
+		public Where(SqlQuery<S> source, SqlTable.Column column, Operator operator, SqlValue value) {
 			this.source = source;
 			this.column = column;
 			this.operator = operator;
@@ -326,6 +389,11 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 			qs += operator.toString();
 			qs += value.toString();
 			return qs;
+		}
+
+		@Override
+		protected SqlTable<S> getTable() {
+			return source.getTable();
 		}
 
 	}

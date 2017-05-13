@@ -191,7 +191,15 @@ public class SqlTable<T extends SqlRow> {
 	 * Get an iterator over all rows of the table
 	 */
 	public SqlQuery<T> select() {
-		return new SqlQuery<>(this);
+		return new SqlQuery.Select<>(this);
+	}
+
+	/**
+	 * Get an
+	 * @return
+	 */
+	public SqlQuery<T> delete() {
+		return new SqlQuery.Delete<>(this);
 	}
 
 	/**

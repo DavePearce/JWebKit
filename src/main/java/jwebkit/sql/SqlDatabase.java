@@ -59,6 +59,19 @@ public class SqlDatabase {
 		return stmt.executeQuery(sql);
 	}
 
+	/**
+	 * Execute a given SQL update. This is given package level visibility so that
+	 * it may be called from other classes in this package.
+	 *
+	 * @param sql
+	 * @return
+	 * @throws SQLException
+	 */
+	int update(String sql) throws SQLException {
+		Statement stmt = connection.createStatement();
+		return stmt.executeUpdate(sql);
+	}
+
 	<T extends SqlRow> void create(SqlTable<T> table) throws SQLException {
 		String sql = "CREATE TABLE " + table.getName() + "(";
 		for(int i=0;i!=table.size();++i) {
@@ -108,12 +121,30 @@ public class SqlDatabase {
 			if (i != 0) {
 				sql += ",";
 			}
-			sql += row.get(i);
+			sql += "?"; // row.get(i);
 		}
 		sql += ");";
 		System.out.println("QUERY : " + sql);
-		Statement stmt = connection.createStatement();
-		stmt.execute(sql);
+		//
+		PreparedStatement stmt = connection.prepareStatement(sql);
+		for (int i = 0; i != row.size(); ++i) {
+			SqlValue value = row.get(i);
+			if(value instanceof SqlValue.Int) {
+				SqlValue.Int v = (SqlValue.Int) value;
+				// FIXME: what to do if value doesn't fit into int?
+				stmt.setInt(i+1, v.asInt());
+			} else if(value instanceof SqlValue.Text) {
+				SqlValue.Text t = (SqlValue.Text) value;
+				stmt.setString(i+1, t.asString());
+			} else if(value instanceof SqlValue.Date) {
+				SqlValue.Date d = (SqlValue.Date) value;
+				stmt.setDate(i+1, java.sql.Date.valueOf(d.asLocalDate()));
+			} else {
+				// FIXME: handle dates, etc.
+				throw new IllegalArgumentException("unknown value encountered: " + value);
+			}
+		}
+		stmt.executeUpdate();
 	}
 
 	/**

@@ -47,6 +47,11 @@ public abstract class SqlType {
 	public static final SqlType.TEXT TINYTEXT = new TEXT(255);
 
 	/**
+	 * SQL TEXT datatype which has a maximum width of 65535 bytes.
+	 */
+	public static final SqlType.TEXT TEXT = new TEXT(65535);
+
+	/**
 	 * SQL MEDIUMTEXT datatype which has a maximum width of 16777215 bytes.
 	 */
 	public static final SqlType.TEXT MEDIUMTEXT = new TEXT(16777215);
@@ -113,6 +118,8 @@ public abstract class SqlType {
 		public SqlValue.Int fromObject(Object o) {
 			if(o instanceof Integer) {
 				return SqlValue.Int((Integer) o);
+			} else if(o instanceof Long) {
+				return SqlValue.Int((Long) o);
 			} else {
 				BigInteger v = (BigInteger) o;
 				return SqlValue.Int(v.longValue());
