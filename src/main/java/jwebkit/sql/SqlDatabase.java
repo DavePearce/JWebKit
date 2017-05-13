@@ -2,6 +2,7 @@ package jwebkit.sql;
 
 import java.util.*;
 import java.sql.*;
+import java.time.LocalDateTime;
 
 public class SqlDatabase {
 	/**
@@ -139,8 +140,12 @@ public class SqlDatabase {
 			} else if(value instanceof SqlValue.Date) {
 				SqlValue.Date d = (SqlValue.Date) value;
 				stmt.setDate(i+1, java.sql.Date.valueOf(d.asLocalDate()));
+			} else if(value instanceof SqlValue.DateTime) {
+				SqlValue.DateTime d = (SqlValue.DateTime) value;
+				LocalDateTime dt = d.asLocalDateTime();
+				java.sql.Date date = java.sql.Date.valueOf(dt.toLocalDate());
+				stmt.setDate(i+1,date);
 			} else {
-				// FIXME: handle dates, etc.
 				throw new IllegalArgumentException("unknown value encountered: " + value);
 			}
 		}

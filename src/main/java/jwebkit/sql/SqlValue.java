@@ -135,6 +135,10 @@ public class SqlValue {
 			this.datetime = date;
 		}
 
+		public LocalDateTime asLocalDateTime() {
+			return datetime;
+		}
+
 		@Override
 		public boolean equals(Object o) {
 			return o instanceof DateTime && datetime.equals(((DateTime)o).datetime);
