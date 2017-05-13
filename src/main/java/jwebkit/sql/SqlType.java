@@ -72,6 +72,20 @@ public abstract class SqlType {
 	}
 
 	/**
+	 * Create a NULLABLE type which defines an instance of some other element
+	 * type that may, in addition, be <code>null</code>.
+	 *
+	 * @param element
+	 * @return
+	 */
+	public static final <T extends SqlType> NULLABLE<T> NULLABLE(T element) {
+		if(element == null) {
+			throw new IllegalArgumentException("Invalid NULLABLE element");
+		}
+		return new NULLABLE<>(element);
+	}
+
+	/**
 	 * Represents the int datatype which corresponds to 32bit signed integers.
 	 *
 	 * @author David J. Pearce
@@ -97,8 +111,12 @@ public abstract class SqlType {
 
 		@Override
 		public SqlValue.Int fromObject(Object o) {
-			BigInteger v = (BigInteger) o;
-			return SqlValue.Int(v.longValue());
+			if(o instanceof Integer) {
+				return SqlValue.Int((Integer) o);
+			} else {
+				BigInteger v = (BigInteger) o;
+				return SqlValue.Int(v.longValue());
+			}
 		}
 
 		@Override
@@ -171,7 +189,7 @@ public abstract class SqlType {
 
 		@Override
 		public String toString() {
-			return "VARCHAR(" + width + ")";
+			return "TEXT(" + width + ")";
 		}
 
 		@Override
@@ -198,7 +216,12 @@ public abstract class SqlType {
 
 		@Override
 		public SqlValue.Date fromObject(Object o) {
-			return new SqlValue.Date((LocalDate) o);
+			if(o instanceof java.sql.Date) {
+				java.sql.Date date = (java.sql.Date) o;
+				return new SqlValue.Date(date.toLocalDate());
+			} else  {
+				return new SqlValue.Date((LocalDate) o);
+			}
 		}
 	}
 	public static final SqlType.DATETIME DATETIME = new DATETIME();
@@ -243,6 +266,41 @@ public abstract class SqlType {
 		public SqlValue.DateTime fromObject(Object o) {
 			throw new RuntimeException("implement me");
 		}
+	}
+
+	/**
+	 * A NULLABLE type is one which may hold the null value, in addition to
+	 * other values of a given type.
+	 *
+	 * @author David J. Pearce
+	 *
+	 *
+	 */
+	public static class NULLABLE<T extends SqlType> extends SqlType {
+		private T element;
+
+		private NULLABLE(T element) {
+			this.element = element;
+		}
+
+		@Override
+		public SqlValue fromObject(Object object) {
+			if(object == null) {
+				return null;
+			} else {
+				return element.fromObject(object);
+			}
+		}
+
+		@Override
+		public boolean isInstance(SqlValue value) {
+			if(value == null) {
+				return true;
+			} else {
+				return element.isInstance(value);
+			}
+		}
+
 	}
 
 	/**

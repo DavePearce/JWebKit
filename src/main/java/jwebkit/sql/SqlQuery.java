@@ -362,7 +362,8 @@ public class SqlQuery<T extends SqlRow> implements Iterable<T> {
 				SqlValue[] row = new SqlValue[table.size()];
 				for (int i = 0; i != row.length; ++i) {
 					SqlTable.Column column = table.getColumn(i);
-					row[i] = column.getType().fromObject(data.getObject(i + 1));
+					Object rowObject = data.getObject(i + 1);
+					row[i] = rowObject == null ? null : column.getType().fromObject(rowObject);
 				}
 				return table.newRowInstance(row);
 			} catch (SQLException e) {

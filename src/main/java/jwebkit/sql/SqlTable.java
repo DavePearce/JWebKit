@@ -124,7 +124,7 @@ public class SqlTable<T extends SqlRow> {
 			SqlValue value = row[i];
 			SqlType type = schema[i].type;
 			if (!type.isInstance(value)) {
-				throw new IllegalArgumentException("invalid row");
+				throw new IllegalArgumentException("invalid value " + value + " for column " + i + " with type " + type);
 			}
 		}
 		// Construct a new row instance
