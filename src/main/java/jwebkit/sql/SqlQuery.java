@@ -2,6 +2,7 @@ package jwebkit.sql;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collection;
 
 /**
  * Represents a given SELECT oR DELETE query. The results of this query are
@@ -85,6 +86,21 @@ public abstract class SqlQuery<T extends SqlRow> implements Iterable<T> {
 		} catch (SQLException e) {
 			throw new RuntimeException("SQL Exception", e);
 		}
+	}
+
+	/**
+	 * Collect all results from this query into a given collection. This is
+	 * essentially a convenience method for the case that we want to quickly get
+	 * all results into a collection for some reason.
+	 *
+	 * @param collection
+	 */
+	public <S extends Collection<T>> S collect(S collection) {
+		Iterator<T> iterator = iterator();
+		while(iterator.hasNext()) {
+			collection.add(iterator.next());
+		}
+		return collection;
 	}
 
 	/**
