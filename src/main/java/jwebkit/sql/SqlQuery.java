@@ -1,7 +1,5 @@
 package jwebkit.sql;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -14,7 +12,6 @@ import java.sql.SQLException;
  *
  * @param <S>
  */
-
 public abstract class SqlQuery<T extends SqlRow> implements Iterable<T> {
 	/**
 	 * The set of possible operations that can be used to refine a query via a
@@ -297,6 +294,50 @@ public abstract class SqlQuery<T extends SqlRow> implements Iterable<T> {
 	}
 
 	/**
+	 * Refine a query by using an "ORDER BY column,...,column" clause. At least
+	 * one column must be given, else an IllegalArgumentException is thrown.
+	 *
+	 * @param columns
+	 *            The columns being ordered by
+	 * @return
+	 */
+	public SqlQuery<T> orderBy(SqlTable.Column... columns) {
+		return orderBy(OrderByMode.None,columns);
+	}
+
+	/**
+	 * Refine a query by using an "ORDER BY column,...,column ASC" clause. At least
+	 * one column must be given, else an IllegalArgumentException is thrown.
+	 *
+	 * @param columns
+	 *            The columns being ordered by
+	 * @return
+	 */
+	public SqlQuery<T> orderByAsc(SqlTable.Column... columns) {
+		return orderBy(OrderByMode.ASC,columns);
+	}
+
+	/**
+	 * Refine a query by using an "ORDER BY column,...,column DESC" clause. At
+	 * least one column must be given, else an IllegalArgumentException is
+	 * thrown.
+	 *
+	 * @param columns
+	 *            The columns being ordered by
+	 * @return
+	 */
+	public SqlQuery<T> orderByDesc(SqlTable.Column... columns) {
+		return orderBy(OrderByMode.DESC,columns);
+	}
+
+	private SqlQuery<T> orderBy(OrderByMode mode, SqlTable.Column... columns) {
+		if(columns.length == 0) {
+			throw new IllegalArgumentException("Require at least one column for ORDER BY clause");
+		}
+		return new OrderBy<>(this,mode,columns);
+	}
+
+	/**
 	 * Represents a SELECT query.
 	 *
 	 * @author David J. Pearce
@@ -325,7 +366,6 @@ public abstract class SqlQuery<T extends SqlRow> implements Iterable<T> {
 		}
 	}
 
-
 	/**
 	 * Represents the results of a given DELETE query.
 	 *
@@ -334,7 +374,6 @@ public abstract class SqlQuery<T extends SqlRow> implements Iterable<T> {
 	 * @param <S>
 	 */
 	public static class Delete<S extends SqlRow> extends SqlQuery<S> {
-
 		/**
 		 * The table that this query is operating over.
 		 */
@@ -395,7 +434,48 @@ public abstract class SqlQuery<T extends SqlRow> implements Iterable<T> {
 		protected SqlTable<S> getTable() {
 			return source.getTable();
 		}
+	}
 
+	private enum OrderByMode {
+		None,
+		ASC,
+		DESC
+	}
+
+	private static class OrderBy<S extends SqlRow> extends SqlQuery<S> {
+		private final SqlQuery<S> source;
+		private final OrderByMode mode;
+		private final SqlTable.Column[] columns;
+
+		public OrderBy(SqlQuery<S> source, OrderByMode mode, SqlTable.Column... columns) {
+			this.source = source;
+			this.mode = mode;
+			this.columns = columns;
+		}
+
+		@Override
+		protected SqlTable<S> getTable() {
+			return source.getTable();
+		}
+
+		@Override
+		protected String getQueryString() {
+			String qs = source.getQueryString();
+			qs += " ORDER BY ";
+			for(int i=0;i!=columns.length;++i) {
+				SqlTable.Column col = columns[i];
+				if(i != 0) {
+					qs += ", ";
+				}
+				qs += col.getName();
+			}
+			if(mode == OrderByMode.ASC) {
+				qs += " ASC";
+			} else if(mode == OrderByMode.DESC) {
+				qs += " DESC";
+			}
+			return qs;
+		}
 	}
 
 	/**
