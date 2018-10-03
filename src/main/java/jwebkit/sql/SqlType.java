@@ -249,7 +249,7 @@ public abstract class SqlType {
 
 		@Override
 		public SqlValue.DateTime fromObject(Object o) {
-			Timestamp timestamp = (Timestamp) o;
+			Timestamp timestamp = new Timestamp((Long)o);
 			return new SqlValue.DateTime(timestamp.toLocalDateTime());
 		}
 	}
