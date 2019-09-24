@@ -21,6 +21,7 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
+import org.apache.http.entity.FileEntity;
 import org.apache.http.protocol.HttpContext;
 
 /**
@@ -48,36 +49,23 @@ public class HttpFileHandler extends HttpMethodDispatchHandler {
 		this.mimeType = mimeType;
 	}
 
+	public HttpFileHandler(int mask, File rootDir, ContentType mimeType) {
+		super(mask);
+		this.rootDir = rootDir;
+		this.mimeType = mimeType;
+	}
+
 	@Override
 	public void get(HttpRequest request, HttpResponse response, HttpContext context) throws HttpException, IOException {
 		try {
 			String uri = request.getRequestLine().getUri();
 			String path = new URIBuilder(uri).getPath();
 			File file = new File(rootDir, path);
-			ByteArrayOutputStream os = new ByteArrayOutputStream();
-			writeFile(os, file);
 			response.setStatusCode(HttpStatus.SC_OK);
-			response.setEntity(new ByteArrayEntity(os.toByteArray(), mimeType));
+			response.setEntity(new FileEntity(file, mimeType));
 		} catch (Exception e) {
 			e.printStackTrace();
 			response.setStatusCode(HttpStatus.SC_BAD_REQUEST);
 		}
-	}
-
-	/**
-	 * Write a given file in chunks to the output stream.
-	 * @param out
-	 * @param file
-	 * @throws IOException
-	 */
-	private void writeFile(OutputStream out, File file) throws IOException {
-		FileInputStream fin = new FileInputStream(file);
-		byte[] bytes = new byte[CHUNK_SIZE];
-		int nread;
-		while ((nread = fin.read(bytes, 0, CHUNK_SIZE)) == CHUNK_SIZE) {
-			out.write(bytes, 0, CHUNK_SIZE);
-		}
-		out.write(bytes, 0, nread);
-		fin.close();
 	}
 }
